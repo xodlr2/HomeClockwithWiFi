@@ -18,8 +18,8 @@ void ledblink();
 void displayUpdate();
 
 /* Wifi define */
-const char* ssid = "genoray-3f-1";
-const char* password = "genoray12345";
+const char* ssid = "RoomGH";
+const char* password = "Feel12345";
 
 const char* ntpServer = "pool.ntp.org";
 int timeZone = 9;
@@ -36,7 +36,7 @@ char daysOfTheWeek[7][12] = {"일", "월", "화", "수", "목", "금", "토"};
 // char hourAfterNoon[2][15] = {"Ante Meridiem", "Post Meridiem"};
 char hourAfterNoon[2][15] = {"오전", "오후"};
 int Hour, AmPm, Min, Sec, Temp;
-int Year, Mon, Day;
+int Year, Mon, Day, bHour;
 char* wDay;
 char* wAmPm;
 
@@ -55,8 +55,8 @@ MD_Parola myDisplay = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
 
 /* Ticker Timer define */
 Ticker timer1;
-Ticker timer2;
-Ticker timer3;
+//Ticker timer2;
+//Ticker timer3;
 //-----------------------------------------------------------------------------------------------
 
 void loadRTC() {
@@ -66,6 +66,15 @@ void loadRTC() {
   Day = now.day();
   wDay = daysOfTheWeek[now.dayOfTheWeek()];
   Hour = now.hour();
+  if (bHour != Hour) {
+    switch (Hour) {
+      case 0 : case 1 : case 2 : case 3 : case 4 : case 5 : myDisplay.setIntensity(0); break;
+      case 22 : case 23 : case 6 : case 7 : myDisplay.setIntensity(1); break;
+      case 20 : case 21 : case 8 : case 9 : myDisplay.setIntensity(3); break;
+      default : myDisplay.setIntensity(5); break;
+    }
+    bHour = Hour;
+  }
   if (Hour > 12) {
     Hour -= 12;
     AmPm = 1;
@@ -81,6 +90,9 @@ void loadRTC() {
 
   Serial.printf("현재 시간: %d년 %d월 %d일(%s) ", Year, Mon, Day, wDay);
   Serial.printf("%s %d시 %d분 %d초 온도: %d도\n", wAmPm, Hour, Min, Sec, Temp);
+
+  myDisplay.setTextAlignment(PA_CENTER);
+  myDisplay.printf("%d:%02d", Hour, Min);
 }
 
 void setRTC() {
@@ -160,7 +172,10 @@ void setup() {
   Serial.setDebugOutput(true);
 
   rtc.begin();
-  /*
+
+  if (rtc.lostPower()) {
+    // this will adjust to the date and time at compilation
+    //    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     if (connectingWiFi()) {
@@ -171,19 +186,19 @@ void setup() {
     }
     WiFi.disconnect(true); //disconnect WiFi as it's no longer needed
     WiFi.mode(WIFI_OFF);
-  */
+  }
 
   // Intialize the object:
   myDisplay.begin();
   myDisplay.setFont(newFont);
   // Set the intensity (brightness) of the display (0-15):
-  myDisplay.setIntensity(10);
+  myDisplay.setIntensity(0);
   // Clear the display:
   // myDisplay.displayClear();
 
   timer1.attach_ms(500, ledblink);
-  timer2.attach_ms(1000, loadRTC);
-  timer3.attach_ms(100, displayUpdate);
+  //  timer2.attach_ms(1000, loadRTC);
+  //  timer3.attach_ms(100, displayUpdate);
 }
 
 void displayUpdate() {
@@ -212,5 +227,6 @@ void displayUpdate() {
 
 // the loop function runs over and over again forever
 void loop() {
-
+  loadRTC();
+  delay(2000);
 }
